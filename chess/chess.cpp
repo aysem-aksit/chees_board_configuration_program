@@ -28,6 +28,13 @@ char** createMatrix(int N);           // char tipiyle tahta oluşturma
 void deleteBoard(char** myArray, int N);
 
 
+int coordinates_of_Queens(char** board,int n);
+int coordinates_of_Obstacles(char** board,int N);
+//void  identify_coordinates();
+
+
+
+
 int choice;
 
 int main() {
@@ -112,6 +119,8 @@ char** createMatrix(int N) {
     return myArray;
 }
 
+
+//Free the memory after the use of array
 void deleteBoard(char** myArray, int N) {
     if (myArray == nullptr) return;
 
@@ -160,7 +169,60 @@ void createBoardMenu(){
         std::cout << "|\n";
     }
     std::cout << std::endl;
+
+    showOutputMenu();
 }
     
 
- void showOutputMenu() {}
+
+
+
+//**************************************************************************
+//****************       IDENTIFY THE COORDINATES          *****************
+//****************     AND FUNCTIONS OF MOVEMENT RULES     *****************
+//**************************************************************************
+
+int coordinates_of_Queens(char** board,int N) {
+    int counter_Q = 0;
+    for(int i=0;i<N;++i){
+        for (int j = 0; j < N; ++j) {
+            if (board[i][j] == 'Q') {
+                std::cout << " ( " << i << " , " << j << " ) , ";// , işini düzenle
+                counter_Q++;
+            }
+        }
+    }
+    return counter_Q;
+}
+int coordinates_of_Obstacles(char** board,int N) {
+    int counter_X = 0;
+    for(int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            if (board[i][j] == 'X') {
+                std::cout << " ( " << i << " , " << j << " ) , ";// , işini düzenle
+                counter_X++;
+            }
+        }
+    }
+    return counter_X;
+}
+
+//identify the coordinates of Queens
+//void  identify_coordinates(char** board, int N) {}
+    
+
+ void showOutputMenu() {
+     std::cout << "Board Size : " << N << std::endl;
+     std::cout << "Number of Queens : " << q << std::endl;
+     std::cout << "Number of Obstacles : " << x << std::endl<<std::endl;
+     std::cout << "Queen Positions : " <<coordinates_of_Queens(board,N)<< std::endl<<std::endl;                        
+     std::cout << "Obstacle Positions : "<<coordinates_of_Obstacles(board,N)<<std::endl;                          
+     std::cout << "Total Reachable Squeares : " << std::endl;                //EKLE
+     std::cout << "Reachable Points : " << std::endl;                         //EKLE
+
+     std::cout << "-----------------------------------------" << std::endl;
+     std::cout << "CHESS BOARD" << std::endl;
+     std::cout << "Q - Queens " << std::endl;
+     std::cout << "X - Obstacles " << std::endl;
+
+ }
