@@ -1,3 +1,2 @@
 ﻿  chess.cpp
-C:\Users\90536\Desktop\chess board\chess\chess\chess.cpp(40,15): warning C4244: 'bağımsız değişken': 'time_t' - 'unsigned int' dönüşümü; veri kaybı olabilir
   chess.vcxproj -> C:\Users\90536\Desktop\chess board\chess\x64\Debug\chess.exe
