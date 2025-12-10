@@ -1,6 +1,7 @@
 ﻿#include<iostream>
 #include<ctime>
-#include <cstdlib> // for rand(), srand() için
+#include <cstdlib> // for rand(), srand() 
+#include<fstream>   // file management
 
 //**********************************************************
 //**********                                    ************
@@ -14,7 +15,7 @@
 struct Coordinate {
     int row;
     int col;
-}position;
+}random;
 
 int N, q, x;
 char** board = nullptr;  //to avoid garbage pointer situation
@@ -28,12 +29,11 @@ char** createMatrix(int N);           // char tipiyle tahta oluşturma
 void deleteBoard(char** myArray, int N);
 
 
-int coordinates_of_Queens(char** board,int n);
-int coordinates_of_Obstacles(char** board,int N);
-//void  identify_coordinates();
+void coordinates_of_Queens(char** board,int n);
+void coordinates_of_Obstacles(char** board,int N);
 
 
-
+void file_management(char** board, int N);
 
 int choice;
 
@@ -94,11 +94,11 @@ char** createMatrix(int N) {
     //random Queen placement
     int placed_Q = 0;        
     while (placed_Q < q) {
-        int random_row = rand() % N;
-        int random_column = rand() % N;
+        random.row = rand() % N;                    //the struct was used
+        random.col = rand() % N;
 
-        if (myArray[random_row][random_column] == '0') {
-            myArray[random_row][random_column] = 'Q';
+        if (myArray[random.row][random.col] == '0') {
+            myArray[random.row][random.col] = 'Q';
             placed_Q++; //counter
         }
     }
@@ -106,12 +106,12 @@ char** createMatrix(int N) {
     //random Obstacle placement
     int placed_X = 0;
     while (placed_X < x) {
-        int random_row = rand() % N;
-        int random_column = rand() % N;
+        random.row = rand() % N;
+        random.col = rand() % N;
 
-        if (myArray[random_row][random_column] == '0') {
-            if (!(myArray[random_row][random_column] == 'Q')) {
-                myArray[random_row][random_column] = 'X';
+        if (myArray[random.row][random.col] == '0') {
+            if (!(myArray[random.row][random.col] == 'Q')) {
+                myArray[random.row][random.col] = 'X';
                 placed_X++;
             }
         }
@@ -162,11 +162,10 @@ void createBoardMenu(){
     board = createMatrix(N);
     // EKRANA MATRİSİ YAZDIR
     for (int i = 0; i < N; i++) {
-        std::cout << "| ";
         for (int j = 0; j < N; j++) {
             std::cout << board[i][j] << ' ';
-        }
-        std::cout << "|\n";
+        } 
+        std::cout<<std::endl;
     }
     std::cout << std::endl;
 
@@ -182,41 +181,45 @@ void createBoardMenu(){
 //****************     AND FUNCTIONS OF MOVEMENT RULES     *****************
 //**************************************************************************
 
-int coordinates_of_Queens(char** board,int N) {
-    int counter_Q = 0;
-    for(int i=0;i<N;++i){
-        for (int j = 0; j < N; ++j) {
-            if (board[i][j] == 'Q') {
-                std::cout << " ( " << i << " , " << j << " ) , ";// , işini düzenle
-                counter_Q++;
+
+//identify the coordinates of Queens
+void coordinates_of_Queens(char** board,int N) {
+    //int counter_Q = 0;
+    for(int row=0;row<N;++row){
+        for (int col = 0; col < N; ++col) {   //if else ekle , icin
+            if (board[row][col] == 'Q') {
+                std::cout << " ( " << (row+1) << " , " << (col+1) << " ) , ";// , işini düzenle
+                //++counter_Q;
             }
         }
     }
-    return counter_Q;
+    //return counter_Q;
 }
-int coordinates_of_Obstacles(char** board,int N) {
-    int counter_X = 0;
+void coordinates_of_Obstacles(char** board,int N) {
+    //int counter_X = 0;
     for(int i = 0; i < N; ++i) {
         for (int j = 0; j < N; ++j) {
             if (board[i][j] == 'X') {
-                std::cout << " ( " << i << " , " << j << " ) , ";// , işini düzenle
-                counter_X++;
+                std::cout << " ( " << (i+1) << " , " << (j+1) << " ) , ";// , işini düzenle
+                //++counter_X;
             }
         }
     }
-    return counter_X;
+    //return counter_X;
 }
 
-//identify the coordinates of Queens
-//void  identify_coordinates(char** board, int N) {}
     
-
  void showOutputMenu() {
      std::cout << "Board Size : " << N << std::endl;
      std::cout << "Number of Queens : " << q << std::endl;
-     std::cout << "Number of Obstacles : " << x << std::endl<<std::endl;
-     std::cout << "Queen Positions : " <<coordinates_of_Queens(board,N)<< std::endl<<std::endl;                        
-     std::cout << "Obstacle Positions : "<<coordinates_of_Obstacles(board,N)<<std::endl;                          
+     std::cout << "Number of Obstacles : " << x << std::endl;
+
+     std::cout << "Queen Positions : " << std::endl;
+     coordinates_of_Queens(board, N);
+     std::cout << std::endl;
+     std::cout << "Obstacle Positions : " << std::endl;
+     coordinates_of_Obstacles(board, N);
+     std::cout<< std::endl;
      std::cout << "Total Reachable Squeares : " << std::endl;                //EKLE
      std::cout << "Reachable Points : " << std::endl;                         //EKLE
 
@@ -226,3 +229,29 @@ int coordinates_of_Obstacles(char** board,int N) {
      std::cout << "X - Obstacles " << std::endl;
 
  }
+
+ //******************************************************************
+ //******************     CREATE AN INPUT.TXT     *******************
+ //******************************************************************
+
+ std::ofstream saver("input.txt");   //console out to file
+ void file_management() {
+     if (saver.is_open()) {
+         for (int row = 0; row < N; ++row) {
+             for (int col = 0; col < N; ++col) {
+                 saver << board[row][col];                   
+             }
+             saver << std::endl;
+         }
+         saver.close();
+     }
+     else {
+         std::cout << "An error occurred while creating/opening the file :( " << std::endl;
+     }
+ }
+ 
+
+
+
+
+
