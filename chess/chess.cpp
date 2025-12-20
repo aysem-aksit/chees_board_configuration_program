@@ -17,7 +17,7 @@
 struct Coordinate {
     int row;
     int col;
-}random;
+}random_coord;
 
 int N, q, x;
 char** board = nullptr;  //to avoid garbage pointer situation
@@ -27,7 +27,7 @@ void showMenu();
 void createBoardMenu();
 void showOutputMenu();
 
-char** createMatrix(int N);           // char tipiyle tahta oluşturma
+char** createMatrix(int N);           // to create board w type char
 void deleteBoard(char** myArray, int N);
 
 
@@ -37,9 +37,17 @@ void coordinates_of_Obstacles(char** board,int N);
 
 void file_management(char** board, int N);    //writes board to input.txt
 void reader();    //reads to input.txt
-int choice;
 
+
+void OneDirection(char** board, bool** reachable, int N, int qRow, int qCol, int rowStep, int colStep);
+void findQueenMoves(char** board, bool** reachable, int N, int r, int c);
+void totalReachableSquares(bool** reachable, int N);
+void reachableCoordinates(bool** reachable, int N);
+void printFinalBoard(char** board, bool** reachable, int N);
+
+int choice;
 int main() {
+    srand(time(NULL));
     do {
         
         showMenu();
@@ -58,12 +66,10 @@ int main() {
         }
     } while (!(choice == 3));
 
-    // cleanup before exit
-    /*if (board != nullptr) {
+    //  to cleanup before exit
+    if (board != nullptr) {
         deleteBoard(board, N);
-        board = nullptr;
-    }*/
-
+    }
 
     return 0;
 }
@@ -81,6 +87,98 @@ void showMenu() {
     std::cin >> choice;
 }
 
+//creating a chess board          
+void createBoardMenu() {
+
+    std::cout << "Let's create new chess board! " << std::endl << std::endl;
+
+    // If a board has been created previously,delete it
+    if (board != nullptr) {
+        deleteBoard(board, N);
+        board = nullptr;
+    }
+
+    //learned it from here -->https://www.boardinfinity.com/blog/rand-function-in-c/ (title:1. Generating Random Numbers in a Specific Range)
+
+    //for N(board size)                       
+    N = rand() % (30 - 5 + 1) + 5;             //rand() % (max - min + 1) + min → including min and max
+    // Board Size(N): 5 ≤ 𝑁 ≤ 30
+
+//for q(number of queens)
+    int max_q = 2 * N;
+    q = rand() % (max_q - 1 + 1) + 1;                    //Number of Queens(q): 1 ≤ 𝑞 ≤ 2 ∗ N
+
+    //for x(number of obstacles)
+    int max_intervealofObstacles = N - q;
+    x = rand() % (max_intervealofObstacles + 1);            //Number of Obstacles(x): 0 ≤ 𝑥 ≤ 𝑁 − 𝑞
+
+    //create new board
+    board = createMatrix(N);
+    file_management(board, N);
+
+    std::cout << "The transaction was completed successfully  :)" << std::endl;
+}          
+
+void showOutputMenu() {
+
+    reader();
+
+    if (board == nullptr) return;
+
+    std::cout << "Board Size : " << N << "x" << N << std::endl;
+    std::cout << "Number of Queens : " << q << std::endl;
+    std::cout << "Number of Obstacles : " << x << std::endl;
+
+    // (to be able to follow without damaging the main board) a boolean matrix to track the queen's movements
+    bool** reachable = new bool* [N];                   //true → The Queen can come here
+    for (int i = 0; i < N; i++) {
+        reachable[i] = new bool[N];
+        for (int j = 0; j < N; j++)
+            reachable[i][j] = false;
+    }
+
+    // Finding the queen on the board
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            if (board[i][j] == 'Q') {
+                findQueenMoves(board, reachable, N, i, j);
+            }
+        }
+    }
+
+    std::cout << "Queen Positions : " << std::endl;
+    coordinates_of_Queens(board, N);
+
+    std::cout << "Obstacle Positions : " << std::endl;
+    coordinates_of_Obstacles(board, N);
+
+
+    std::cout << "Total Reachable Squeares : ";
+    totalReachableSquares(reachable, N);
+    std::cout << std::endl;
+
+    std::cout << "Reachable Points : ";
+    reachableCoordinates(reachable, N);
+
+
+    std::cout << "-----------------------------------------" << std::endl;
+    std::cout << "CHESS BOARD" << std::endl;
+    std::cout << "Q - Queens " << std::endl;
+    std::cout << "X - Obstacles " << std::endl;
+    std::cout << "+ - Possible Movemenets " << std::endl;
+    std::cout << "-----------------------------------------" << std::endl;
+    printFinalBoard(board, reachable, N);
+    std::cout << std::endl;
+    std::cout << "-----------------------------------------" << std::endl;
+
+    // clear memory
+    for (int i = 0; i < N; i++)
+        delete[] reachable[i];
+    delete[] reachable;
+}
+
+
+
 
 // create 2D dynamic array((filled with '0', Q and X placed randomly)
 char** createMatrix(int N) {
@@ -94,30 +192,30 @@ char** createMatrix(int N) {
     //random Queen placement
     int placed_Q = 0;        
     while (placed_Q < q) {
-        random.row = rand() % N;                    //the struct was used
-        random.col = rand() % N;
+        random_coord.row = rand() % N;                    //the struct was used
+        random_coord.col = rand() % N;
 
-        if (myArray[random.row][random.col] == '0') {
-            myArray[random.row][random.col] = 'Q';
+        if (myArray[random_coord.row][random_coord.col] == '0') {
+            myArray[random_coord.row][random_coord.col] = 'Q';
             placed_Q++; //counter
         }
     }
+
     //random Obstacle placement
     int placed_X = 0;
     while (placed_X < x) {
-        random.row = rand() % N;
-        random.col = rand() % N;
+        random_coord.row = rand() % N;
+        random_coord.col = rand() % N;
 
-        if (myArray[random.row][random.col] == '0') {
-            if (!(myArray[random.row][random.col] == 'Q')) {
-                myArray[random.row][random.col] = 'X';
+        if (myArray[random_coord.row][random_coord.col] == '0') {
+            if (!(myArray[random_coord.row][random_coord.col] == 'Q')) {
+                myArray[random_coord.row][random_coord.col] = 'X';
                 placed_X++;
             }
         }
     }
     return myArray;
 }
-
 
 //Free the memory after the use of array
 void deleteBoard(char** myArray, int N) {
@@ -128,95 +226,7 @@ void deleteBoard(char** myArray, int N) {
     }
     delete[] myArray;
 }
-
-
-//board oluşturma
-void createBoardMenu(){
-
-    std::cout << "Let's create new chess board! " << std::endl;
-
-    // Eğer daha önce bir board oluşturulduysa onu sil
-    if (board != nullptr) {
-        deleteBoard(board, N);
-        board = nullptr;
-    }
-
-    //for N(board size)
-    N = rand() % (30 - 5 + 1) + 5;             //rand() % (max - min + 1) + min → including min and max
-                                                // Board Size(N): 5 ≤ 𝑁 ≤ 30
-    //std::cout << "Randomly Selected Board Size (N): " << N << std::endl;
- 
-    //for q(number of queens)
-    int max_q = 2 * N;
-    q = rand() % (max_q - 1 + 1) + 1;                    //Number of Queens(q): 1 ≤ 𝑞 ≤ 2 ∗ N
-
-    //for x(number of obstacles)
-    int max_intervealofObstacles = N - q;
-    x = rand() % (max_intervealofObstacles + 1);            //Number of Obstacles(x): 0 ≤ 𝑥 ≤ 𝑁 − 𝑞
-
-    //yeni board oluştur
-    board = createMatrix(N);
-    file_management(board,N);
-
-    showMenu();
-}
     
-
-
-
-
-//**************************************************************************
-//****************       IDENTIFY THE COORDINATES          *****************
-//****************     AND FUNCTIONS OF MOVEMENT RULES     *****************
-//**************************************************************************
-
-
-//identify the coordinates of Queens
-void coordinates_of_Queens(char** board,int N) {
-    for(int row=0;row<N;++row){
-        for (int col = 0; col < N; ++col) {   //if else ekle , icin
-            if (board[row][col] == 'Q') {
-                std::cout << " ( " << (row) << " , " << (col) << " ) , ";// , işini düzenle
-            }
-        }
-    }
-}
-void coordinates_of_Obstacles(char** board,int N) {
-    for(int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            if (board[i][j] == 'X') {
-                std::cout << " ( " << (i) << " , " << (j) << " ) , ";// , işini düzenle
-            }
-        }
-    }
-}
-
-    
- void showOutputMenu() {
-
-     reader();
-     std::cout << "Board Size : " << N << std::endl;
-     std::cout << "Number of Queens : " << q << std::endl;
-     std::cout << "Number of Obstacles : " << x << std::endl;
-
-     std::cout << "Queen Positions : " << std::endl;
-     coordinates_of_Queens(board, N);
-     std::cout << std::endl;
-     std::cout << "Obstacle Positions : " << std::endl;
-     coordinates_of_Obstacles(board, N);
-     std::cout<< std::endl;
-     std::cout << "Total Reachable Squeares : " << std::endl;                //EKLE
-     std::cout << "Reachable Points : " << std::endl;                         //EKLE
-
-     std::cout << "-----------------------------------------" << std::endl;
-     std::cout << "CHESS BOARD" << std::endl;
-     std::cout << "Q - Queens " << std::endl;
-     std::cout << "X - Obstacles " << std::endl;
-     std::cout << "-----------------------------------------" << std::endl;
-
-     //     DOSYA OKUMA KODU VE ULAŞABİLECEĞİ YERE + YAZMA
-     std::cout << "-----------------------------------------" << std::endl;
- }
 
  //******************************************************************
  //**************     CREATE & READ AN INPUT.TXT     ****************
@@ -239,59 +249,180 @@ void coordinates_of_Obstacles(char** board,int N) {
      }
  }
  
- 
  void reader(){
-     std::ifstream file("input.txt");     //reads
+     std::ifstream file("input.txt");     //reads to the file
+     if (!file.is_open()) {
+         std::cout << "There is no such file  :(" << std::endl;
+         return;
+     }
+     //**    to find board size(N)  **
+         std::string matrix_line;    //A string where each line is temporarily stored
+         int findSize=0;
 
-     //******************     to find size       *******************
-     if (file.is_open()) {
-         int findSıze=0;
-         std::string matrix;    //A string where each line is temporarily stored
-         while (std::getline(file, matrix)) {
-             if (matrix != "")
-                 findSıze++;
+         while (std::getline(file, matrix_line)) {
+                 int count = 0;
+             for (int i = 0; i < matrix_line.length(); i++) {
+                 if (matrix_line[i] == '0' || matrix_line[i] == 'Q' || matrix_line[i] == 'X') {
+                     count++;
+                 }
+             }
+             findSize = count;
          }
          file.close();
-
-         N = findSıze;    // N is the size of board
 
          if (board != nullptr) {          //to avoid memory leak
              for (int i = 0; i < N; i++)
                  delete[] board[i];
              delete[] board;
+             board = nullptr;
          }
-         //create new board
+
+         N =findSize ;    // N is the size of board
+
+         //create new board  (To load the board from input.txt into memory)
          board = new char* [N];
          for (int i = 0; i < N; i++)
              board[i] = new char[N];
 
-         // *****  open the file again and fill in the matrix    *****     
-         file.open("input.txt");
+         // open the file again and fill in the matrix   
+         std::ifstream fileAgain("input.txt");
+         if (fileAgain.is_open()) {
+             int row = 0;
+             q = 0;
+             x = 0;
+             while (std::getline(fileAgain, matrix_line) && (row<N)) {
+                 if ((int)matrix_line.length() < N) continue;
 
-         int row = 0;
-         int q= 0;
-         int x = 0;
-         while (std::getline(file, matrix)) {
-             for (int col = 0; col < N; col++) {
-                 char hr = matrix[col];
-                 hr = board[row][col];
+                 for (int col = 0; col < N; col++) {
+                     char hr = matrix_line[col];      //Because from now on it will be read character by character.
+                     board[row][col] = hr;                 //https://www.youtube.com/watch?v=u-seOESMJA0 (learned in the 23th minute)
 
-                 if (hr == 'Q')
-                     q++;
-                 if (hr == 'X') 
-                     x++;
+                     if (hr == 'Q')
+                         q++;
+                     if (hr == 'X')
+                         x++;
+                 }
+                 row++;
              }
-             row++;
-         }
-        
-         file.close();
 
+             fileAgain.close();
+         }
+ }
+
+
+ //**************************************************************************
+//****************       IDENTIFY THE COORDINATES            ****************
+//****************   AND FUNCTIONS OF QUEEN MOVEMENT RULES   ****************
+//***************************************************************************
+
+
+ void OneDirection(char** board, bool** reachable,int N, int qRow, int qCol,int rowStep, int colStep)
+ {
+     int r = qRow + rowStep;
+     int c = qCol + colStep;
+
+     while (r >= 0 && r < N && c >= 0 && c < N)
+     {
+         // to stop if there is an obstacle or another queen
+         if (board[r][c] == 'X' || board[r][c] == 'Q')
+             break;
+
+         // empty square
+         reachable[r][c] = true;
+
+         r =r+ rowStep;
+         c =c +colStep;
      }
-     else {
-         std::cout << "There is no such file " << "\n";
+ }
+ 
+
+ void findQueenMoves(char** board, bool** reachable, int N, int r, int c)
+ {
+     OneDirection(board, reachable, N, r, c, 0, 1);
+     OneDirection(board, reachable, N, r, c, 0, -1);
+     OneDirection(board, reachable, N, r, c, 1, 0);
+     OneDirection(board, reachable, N, r, c, -1, 0);
+     OneDirection(board, reachable, N, r, c, 1, 1);
+     OneDirection(board, reachable, N, r, c, 1, -1);
+     OneDirection(board, reachable, N, r, c, -1, 1);
+     OneDirection(board, reachable, N, r, c, -1, -1);
+ }
+
+ //identify the coordinates of Queens and Obstacles
+ void coordinates_of_Queens(char** board, int N) {
+     int counter = 0;
+     for (int row = 0; row < N; ++row) {
+         for (int col = 0; col < N; ++col) {   
+             if (board[row][col] == 'Q') {
+                 std::cout << " ( " << (row) << " , " << (col) << " ) , ";
+                 counter++;
+                 if (counter % 10 == 0) std::cout << std::endl; //New line breaks every 10 coordinates (I added this to ensure the program fits on the screen when run)
+             }
+         }
      }
+     std::cout << std::endl;
+ }
+ void coordinates_of_Obstacles(char** board, int N) {
+     int counter = 0;
+     for (int i = 0; i < N; ++i) {
+         for (int j = 0; j < N; ++j) {
+             if (board[i][j] == 'X') {
+                 std::cout << " ( " << (i) << " , " << (j) << " ) , ";
+                 counter++;
+                 if (counter % 10 == 0) std::cout << std::endl; //New line breaks every 10 coordinates
+             }
+         }
+     }
+     std::cout << std::endl;
+
  }
 
 
 
+ void totalReachableSquares(bool** reachable, int N) {
+     int total = 0; for (int i = 0; i < N; i++) {
+         for (int j = 0; j < N; j++) {
+             if (reachable[i][j] == true) {
+                 total++;
+             }
+         }
+     }
+     std::cout << total;
+ }
+
+ void reachableCoordinates(bool** reachable, int N) {   //to print reachable coordinates of queens
+     int counter = 0;
+     for (int i = 0; i < N; i++) {
+         for (int j = 0; j < N; j++) {
+             if (reachable[i][j] == true) {
+                 std::cout << "(" << i << "," << j << ") ";
+                 counter++;
+
+                 if (counter % 8 == 0) {
+                     std::cout << std::endl;
+                 }
+             }
+         }
+         std::cout << std::endl;
+     }
+ }
+
+ 
+ void printFinalBoard(char** board, bool** reachable, int N){   //chess board with 'X' , 'Q' , '0' , '+'
+     for (int i = 0; i < N; i++) {
+         for (int j = 0; j < N; j++) {
+
+             if (board[i][j] == 'Q')
+                 std::cout << 'Q';
+             else if (board[i][j] == 'X')
+                 std::cout << 'X';
+             else if (reachable[i][j]==true)
+                 std::cout << '+';
+             else
+                 std::cout << '0';
+
+         }
+         std::cout << std::endl;
+     }
+ }
 
